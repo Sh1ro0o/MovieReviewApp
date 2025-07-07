@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateGenreDto } from './dto/create-genre.dto';
 import { UpdateGenreDto } from './dto/update-genre.dto';
 import { Repository } from 'typeorm';
@@ -32,10 +32,10 @@ export class GenreService {
     return this.genreRepository.findOneBy({ id });
   }
 
-  async update(id: number, updateGenreDto: UpdateGenreDto): Promise<Genre | null> {
+  async update(id: number, updateGenreDto: UpdateGenreDto): Promise<Genre> {
     let existingGenre = await this.genreRepository.findOneBy({ id });
     if (!existingGenre) {
-      return null;
+      throw new NotFoundException(`Genre with id: ${id} not found!`); 
     }
 
     existingGenre = updateGenreDtoToGenre(updateGenreDto, existingGenre); 
@@ -43,6 +43,11 @@ export class GenreService {
   }
 
   async remove(id: number): Promise<boolean> {
+    const existingGenre = await this.genreRepository.findOneBy({ id });
+    if (!existingGenre) {
+      throw new NotFoundException(`Genre with id: ${id} not found!`); 
+    }
+
     const result = await this.genreRepository.delete({ id });
     return (result?.affected ?? 0) > 0;
   }

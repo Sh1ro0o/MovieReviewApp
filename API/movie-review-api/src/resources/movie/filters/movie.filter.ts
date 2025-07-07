@@ -1,9 +1,10 @@
-import { IsArray, IsNumber, IsOptional, IsString, MaxLength } from "class-validator";
+import { IsOptional, IsString, MaxLength, IsNumber, IsArray } from "class-validator";
 
-export class CreateMovieDto {
+export class MovieFilter {
+  @IsOptional()
   @IsString()
   @MaxLength(50)
-  title: string;
+  title?: string;
 
   @IsOptional()
   @IsNumber()
@@ -18,7 +19,8 @@ export class CreateMovieDto {
   @IsString()
   description?: string;
 
+  @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
-  genreIds: number[];
+  genres?: number[];
 }
