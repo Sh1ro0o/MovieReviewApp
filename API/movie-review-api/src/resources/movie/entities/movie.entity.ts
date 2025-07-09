@@ -1,9 +1,10 @@
 import { Genre } from "src/resources/genre/entities/genre.entity";
-import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Review } from "src/resources/review/entities/review.entity";
+import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class Movie {
-  @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn()
     id: number;
   
     @Column('varchar', { length: 100 })
@@ -21,4 +22,7 @@ export class Movie {
     @ManyToMany(() => Genre, genre => genre.movies, { cascade: true })
     @JoinTable()
     genres: Genre[];
+
+    @OneToMany(() => Review, review => review.movie)
+    reviews: Review[];
 }
