@@ -40,7 +40,8 @@ export class MovieService {
 
   async findAll(filter: MovieFilter): Promise<Movie[]> {
     const query = this.movieRepository.createQueryBuilder('movie');
-    query.innerJoinAndSelect('movie.genres', 'genre') //includes genres
+    query.innerJoinAndSelect('movie.genres', 'genre'); //includes genres
+    query.innerJoinAndSelect('movie.reviews', 'review'); //includes reviews
 
     if (filter.title) {
       query.andWhere('LOWER(movie.title) LIKE LOWER(:title)', { title: `%${filter.title}%` });
@@ -54,8 +55,11 @@ export class MovieService {
     if (filter.description) {
       query.andWhere('LOWER(movie.description) LIKE LOWER(:description)', { description: `%${filter.description}%` });
     }
-    if (filter.genres && filter.genres?.length > 0) {
-      query.andWhere('genre.id IN (:...genreIds)', { genreIds: filter.genres })
+    if (filter.genreIds && filter.genreIds?.length > 0) {
+      query.andWhere('genre.id IN (:...genreIds)', { genreIds: filter.genreIds })
+    }
+    if (filter.reviewIds && filter.reviewIds?.length > 0) {
+      query.andWhere('review.id IN (:...reviewIds)', { reviewIds: filter.reviewIds });
     }
   
     return await query.getMany();
@@ -64,7 +68,7 @@ export class MovieService {
   async findOne(id: number): Promise<Movie | null> {
     return this.movieRepository.findOne({
         where: { id },
-        relations: ['genres'] //includes genres
+        relations: ['genres', 'reviews'] //includes genres
       });
   }
 
@@ -90,13 +94,12 @@ export class MovieService {
     return this.movieRepository.save(existingMovie);
   }
 
-  async remove(id: number): Promise<boolean> {
+  async remove(id: number): Promise<void> {
     const existingMovie = await this.movieRepository.findOneBy({ id });
     if (!existingMovie) {
-      throw new NotFoundException(`Movie with id: ${id} not found!`); 
+      throw new NotFoundException(`Movie with id: ${id} not found!`);
     }
 
-    const result = await this.movieRepository.delete({ id });
-    return (result?.affected ?? 0) > 0;
+    await this.movieRepository.remove(existingMovie);
   }
 }

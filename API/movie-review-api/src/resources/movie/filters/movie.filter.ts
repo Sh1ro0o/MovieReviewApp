@@ -22,5 +22,10 @@ export class MovieFilter {
   @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
-  genres?: number[];
+  genreIds?: number[];
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  reviewIds?: number[];
 }

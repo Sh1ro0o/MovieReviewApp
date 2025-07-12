@@ -1,10 +1,12 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { Repository } from 'typeorm';
 import { Review } from './entities/review.entity';
 import { Movie } from '../movie/entities/movie.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ReviewFilter } from './filters/review.filter';
+import { updateReviewDtoToReview } from './mappers/review.mapper';
 
 @Injectable()
 export class ReviewService {
@@ -32,19 +34,46 @@ export class ReviewService {
     return this.repositoryReview.save(review);
   }
 
-  findAll() {
-    return `This action returns all review`;
+  async findAll(filter: ReviewFilter): Promise<Review[]> {
+    const reviewFilter: Partial<ReviewFilter> = {}
+
+    if (filter.username !== undefined) reviewFilter.username = filter.username;
+    if (filter.review !== undefined) reviewFilter.review = filter.review;
+    if (filter.createdDate !== undefined) reviewFilter.createdDate = filter.createdDate;
+    if (filter.movieId !== undefined) reviewFilter.movieId = filter.movieId;
+
+    return this.repositoryReview.findBy(reviewFilter);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} review`;
+  async findOne(id: number): Promise<Review | null> {
+    return this.repositoryReview.findOneBy({id});
   }
 
-  update(id: number, updateReviewDto: UpdateReviewDto) {
-    return `This action updates a #${id} review`;
+  async update(id: number, updateReviewDto: UpdateReviewDto): Promise<Review> {
+    let existingReview = await this.repositoryReview.findOneBy({id});
+    if (!existingReview) {
+      throw new NotFoundException(`Review with id: ${id} not found!`); 
+    }
+
+    if (updateReviewDto.movieId) {
+      const existingMovie = await this.repositoryMovie.findOneBy({ id: updateReviewDto.movieId });
+      if (!existingMovie) {
+        throw new NotFoundException(`Movie with id: ${updateReviewDto.movieId} not found!`);
+      }
+
+      existingReview.movie = existingMovie;
+    }
+
+    existingReview = updateReviewDtoToReview(updateReviewDto, existingReview)
+    return this.repositoryReview.save(existingReview);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} review`;
+  async remove(id: number): Promise<void> {
+    const existingReview = await this.repositoryReview.findOneBy({id});
+    if (!existingReview) {
+      throw new NotFoundException(`Review with id: ${id} not found!`); 
+    }
+
+    await this.repositoryReview.remove(existingReview);
   }
 }
